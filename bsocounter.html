@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>BSO Counter</title>
+    <style>
+        :root {
+            --bg-color: #1a1a1a;
+            --ball-color: #4caf50;
+            --strike-color: #fdd835;
+            --out-color: #f44336;
+            --off-color: #333;
+        }
+        body {
+            background-color: var(--bg-color);
+            color: white;
+            font-family: 'Arial', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            overflow: hidden;
+            touch-action: manipulation;
+        }
+        .container {
+            width: 90%;
+            max-width: 400px;
+            background: #000;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+        }
+        .row {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .label {
+            font-size: 2.5rem;
+            font-weight: bold;
+            width: 40px;
+            margin-right: 20px;
+        }
+        .dots {
+            display: flex;
+            gap: 15px;
+        }
+        .dot {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            background-color: var(--off-color);
+            border: 2px solid #555;
+            transition: background-color 0.1s;
+        }
+        /* 点灯色 */
+        .ball.active { background-color: var(--ball-color); box-shadow: 0 0 15px var(--ball-color); }
+        .strike.active { background-color: var(--strike-color); box-shadow: 0 0 15px var(--strike-color); }
+        .out.active { background-color: var(--out-color); box-shadow: 0 0 15px var(--out-color); }
+
+        .controls {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            width: 100%;
+            margin-top: 20px;
+        }
+        button {
+            padding: 15px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            border: none;
+            border-radius: 10px;
+            background: #444;
+            color: white;
+            cursor: pointer;
+            active: transform: scale(0.95);
+        }
+        .btn-reset { grid-column: span 2; background: #666; margin-top: 10px; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <!-- Ball Row -->
+        <div class="row">
+            <div class="label" style="color: var(--ball-color);">B</div>
+            <div class="dots" id="ball-dots">
+                <div class="dot ball"></div>
+                <div class="dot ball"></div>
+                <div class="dot ball"></div>
+            </div>
+        </div>
+        <!-- Strike Row -->
+        <div class="row">
+            <div class="label" style="color: var(--strike-color);">S</div>
+            <div class="dots" id="strike-dots">
+                <div class="dot strike"></div>
+                <div class="dot strike"></div>
+            </div>
+        </div>
+        <!-- Out Row -->
+        <div class="row">
+            <div class="label" style="color: var(--out-color);">O</div>
+            <div class="dots" id="out-dots">
+                <div class="dot out"></div>
+                <div class="dot out"></div>
+            </div>
+        </div>
+
+        <div class="controls">
+            <button onclick="addCount('ball')">BALL</button>
+            <button onclick="addCount('strike')">STRIKE</button>
+            <button onclick="addCount('out')">OUT</button>
+            <button onclick="clearInning()">CLEAR</button>
+            <button class="btn-reset" onclick="resetAll()">ALL RESET</button>
+        </div>
+    </div>
+
+    <script>
+        let counts = { ball: 0, strike: 0, out: 0 };
+
+        function updateDisplay() {
+            updateRow('ball', 3);
+            updateRow('strike', 2);
+            updateRow('out', 2);
+        }
+
+        function updateRow(type, max) {
+            const dots = document.getElementById(`${type}-dots`).children;
+            for (let i = 0; i < dots.length; i++) {
+                if (i < counts[type]) {
+                    dots[i].classList.add('active');
+                } else {
+                    dots[i].classList.remove('active');
+                }
+            }
+        }
+
+        function addCount(type) {
+            counts[type]++;
+            
+            // 野球のルール判定
+            if (type === 'ball' && counts.ball === 4) {
+                clearInning();
+            } else if (type === 'strike' && counts.strike === 3) {
+                counts.out++;
+                clearInning();
+            } else if (type === 'out' && counts.out === 3) {
+                resetAll();
+            }
+            updateDisplay();
+        }
+
+        function clearInning() {
+            counts.ball = 0;
+            counts.strike = 0;
+            updateDisplay();
+        }
+
+        function resetAll() {
+            counts = { ball: 0, strike: 0, out: 0 };
+            updateDisplay();
+        }
+    </script>
+</body>
+</html>
