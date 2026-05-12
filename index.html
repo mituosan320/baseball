@@ -2,13 +2,11 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>東大阪ベースボールクラブ - BSO Board</title>
-
-    <!-- 【追加】通常のブラウザタブ用アイコン（ファビコン） -->
-    <link rel="icon" type="image/png" href="bsoicon.png">
-    <!-- 【追加】iPhone/iPadのホーム画面追加用アイコン -->
-    <link rel="apple-touch-icon" href="bsoicon.png">
+    
+    <link rel="icon" type="image/png" href="icon.png">
+    <link rel="apple-touch-icon" href="icon.png">
 
     <style>
         body {
@@ -19,7 +17,11 @@
             flex-direction: column;
             align-items: center;
             margin: 0;
-            height: 100vh;
+            min-height: 100vh;
+            box-sizing: border-box;
+            /* iPhoneの画面下部の被りを防ぐためのスクロール余白を確保 */
+            padding-bottom: 80px; 
+            overflow-y: auto;
         }
 
         .header-container {
@@ -103,6 +105,8 @@
             width: 350px;
             padding: 0 20px;
             box-sizing: border-box;
+            /* 下部ステータスバーと被らないようマージンを追加 */
+            margin-bottom: 40px; 
         }
 
         .action-grid {
@@ -142,16 +146,20 @@
             background: linear-gradient(to bottom, #4f5d73, #3a4454); 
             border: none;
             grid-column: span 2; 
-            padding: 12px;
-            font-size: 14px;
+            padding: 14px;
+            font-size: 15px;
             color: #cbd5e1;
+            margin-top: 5px;
         }
 
+        /* 画面下部 Bluetoothステータスバー */
         #status-bar {
             position: fixed;
             bottom: 0;
+            left: 0;
             width: 100%;
-            padding: 12px 0;
+            /* iPhone下部のノッチ（セーフエリア）を考慮したパディング */
+            padding: 12px 0 calc(12px + env(safe-area-inset-bottom));
             text-align: center;
             background-color: #12151c;
             font-size: 13px;
@@ -160,6 +168,7 @@
             border-top: 1px solid #1f242d;
             letter-spacing: 1px;
             white-space: pre-wrap;
+            z-index: 9999;
         }
         #status-bar.connected { color: #2ecc71; }
     </style>
@@ -207,7 +216,6 @@
         let chara = null;
         let device = null;
         
-        // HM-10が標準で発信するサービスUUID
         const SERVICE_UUID = "0000ffe0-0000-1000-8000-00805f9b34fb";
         const CHAR_UUID = "0000ffe1-0000-1000-8000-00805f9b34fb";
 
@@ -220,7 +228,6 @@
             try {
                 updateStatus("デバイス選択画面を開いています...", false);
                 
-                // 【修正】周辺のワイヤレスイヤホンや他機器を非表示にし、HM-10のみをリストアップする
                 device = await navigator.bluetooth.requestDevice({
                     filters: [{ services: [SERVICE_UUID] }]
                 });
@@ -234,7 +241,8 @@
                 chara.addEventListener('characteristicvaluechanged', handleData);
                 device.addEventListener('gattserverdisconnected', onDisconnected);
                 
-                updateStatus("CONNECTED: " + device.name, true);
+                let displayName = device.name ? device.name : "HM-10";
+                updateStatus("CONNECTED: " + displayName, true);
 
                 setTimeout(async () => { await send('?'); }, 500);
             } catch (error) {
