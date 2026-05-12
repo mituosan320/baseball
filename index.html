@@ -16,30 +16,31 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: space-between; /* 要素を上下いっぱいにバランスよく配置 */
+            justify-content: center; /* 【修正】要素をバラバラに広げず、中央に美しく集める */
+            gap: clamp(15px, 4vh, 35px); /* 【修正】画面の高さに合わせて、隙間を自動で適切にコントロール */
             margin: 0;
-            height: 100vh; /* 画面の高さを100%に固定 */
+            height: 100vh;
             box-sizing: border-box;
-            padding: 15px 0 calc(70px + env(safe-area-inset-bottom)) 0; /* 下部固定バーのスペースだけ空ける */
+            padding: 10px 0 calc(65px + env(safe-area-inset-bottom)) 0;
             overflow: hidden; /* スクロールを完全に禁止 */
         }
 
-        /* 上部ヘッダーとスコアボードをまとめるコンテナ */
+        /* 上部セクション（ロゴ＋スコアボード） */
         .top-container {
             display: flex;
             flex-direction: column;
             align-items: center;
             width: 100%;
+            gap: 12px;
         }
 
         .header-container {
             text-align: center;
-            margin-bottom: 10px;
         }
 
         h1 {
             margin: 0;
-            font-size: 24px;
+            font-size: clamp(20px, 4vw, 24px); /* 画面幅に応じて文字サイズを微調整 */
             font-weight: 900;
             letter-spacing: 1px;
             color: #d4af37;
@@ -56,7 +57,7 @@
 
         .scoreboard {
             background: linear-gradient(135deg, #1f242d, #12151c);
-            padding: 15px 20px; /* 縦のパディングを縮小 */
+            padding: 15px 20px;
             border-radius: 12px;
             border: 3px solid #d4af37;
             box-shadow: 0 10px 20px rgba(0,0,0,0.7), inset 0 0 15px rgba(0,0,0,0.6);
@@ -66,13 +67,13 @@
         .row {
             display: flex;
             align-items: center;
-            margin-bottom: 12px; /* カウント行の間隔を狭く */
+            margin-bottom: 12px;
         }
 
         .row:last-child { margin-bottom: 0; }
 
         .label {
-            font-size: 32px; /* 文字を少し小さく */
+            font-size: 32px;
             font-weight: 900;
             width: 40px;
             margin-right: 15px;
@@ -81,7 +82,7 @@
         }
 
         .circle {
-            width: 36px; /* 丸のサイズをわずかに縮小 */
+            width: 36px;
             height: 36px;
             border-radius: 50%;
             margin: 0 5px;
@@ -107,13 +108,11 @@
             border-color: #f1948a;
         }
 
-        /* コントロールエリア（画面下部に綺麗に収まるよう調整） */
+        /* 下部操作ボタンエリア */
         .controls {
             width: 330px;
             padding: 0 15px;
             box-sizing: border-box;
-            margin-top: auto; /* スコアボードとの余白を自動計算 */
-            margin-bottom: 10px;
         }
 
         .action-grid {
@@ -123,7 +122,7 @@
         }
 
         button {
-            padding: 14px; /* ボタンの高さを少し抑えてコンパクトに */
+            padding: 14px;
             font-size: 16px;
             font-weight: bold;
             border: 1px solid #2c3545;
@@ -156,7 +155,7 @@
             bottom: 0;
             left: 0;
             width: 100%;
-            height: calc(55px + env(safe-area-inset-bottom)); /* 高さを明示的に固定 */
+            height: calc(55px + env(safe-area-inset-bottom));
             background-color: #12151c;
             border-top: 1px solid #1f242d;
             display: flex;
@@ -196,7 +195,7 @@
 </head>
 <body>
 
-    <!-- 上部セクション -->
+    <!-- 上部セクション（ロゴ＋スコアボード） -->
     <div class="top-container">
         <div class="header-container">
             <h1>HIGASHIOSAKA B.B.C.</h1>
@@ -223,7 +222,7 @@
         </div>
     </div>
 
-    <!-- 中央・下部操作セクション（余白を自動計算して配置） -->
+    <!-- 下部操作ボタンエリア（大きな余白を作らず自動調整） -->
     <div class="controls">
         <div class="action-grid">
             <button onclick="send('B')">BALL</button>
@@ -289,9 +288,9 @@
             const sMatch = msg.match(/S(\d)/);
             const oMatch = msg.match(/O(\d)/);
 
-            const b = bMatch ? parseInt(bMatch[1]) : 0;
-            const s = sMatch ? parseInt(sMatch[1]) : 0;
-            const o = oMatch ? parseInt(oMatch[1]) : 0;
+            const b = bMatch ? parseInt(bMatch) : 0;
+            const s = sMatch ? parseInt(sMatch) : 0;
+            const o = oMatch ? parseInt(oMatch) : 0;
 
             for(let i=1; i<=3; i++) {
                 const el = document.getElementById(`b${i}`);
