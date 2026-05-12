@@ -2,168 +2,294 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>BSO Counter</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>東大阪ベースボールクラブ - BSO Board</title>
+
+    <!-- 【追加】通常のブラウザタブ用アイコン（ファビコン） -->
+    <link rel="icon" type="image/png" href="bsoicon.png">
+    <!-- 【追加】iPhone/iPadのホーム画面追加用アイコン -->
+    <link rel="apple-touch-icon" href="bsoicon.png">
+
     <style>
-        :root {
-            --bg-color: #1a1a1a;
-            --ball-color: #4caf50;
-            --strike-color: #fdd835;
-            --out-color: #f44336;
-            --off-color: #333;
-        }
         body {
-            background-color: var(--bg-color);
-            color: white;
-            font-family: 'Arial', sans-serif;
+            background-color: #0b0c10;
+            color: #f4f6f9;
+            font-family: 'Helvetica Neue', Arial, sans-serif;
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
-            height: 100vh;
             margin: 0;
-            overflow: hidden;
-            touch-action: manipulation;
+            height: 100vh;
         }
-        .container {
-            width: 90%;
-            max-width: 400px;
-            background: #000;
-            padding: 20px;
-            border-radius: 15px;
-            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+
+        .header-container {
+            text-align: center;
+            margin-top: 25px;
+            margin-bottom: 15px;
         }
+
+        h1 {
+            margin: 0;
+            font-size: 26px;
+            font-weight: 900;
+            letter-spacing: 1px;
+            color: #d4af37;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
+        }
+
+        .sub-title {
+            margin-top: 4px;
+            font-size: 12px;
+            font-weight: bold;
+            color: #a0aab2;
+            letter-spacing: 3px;
+        }
+
+        .scoreboard {
+            background: linear-gradient(135deg, #1f242d, #12151c);
+            padding: 25px 20px;
+            border-radius: 12px;
+            border: 3px solid #d4af37;
+            box-shadow: 0 15px 30px rgba(0,0,0,0.7), inset 0 0 15px rgba(0,0,0,0.6);
+            width: 310px;
+        }
+
         .row {
             display: flex;
             align-items: center;
-            margin-bottom: 20px;
+            margin-bottom: 22px;
         }
+
+        .row:last-child { margin-bottom: 0; }
+
         .label {
-            font-size: 2.5rem;
-            font-weight: bold;
-            width: 40px;
-            margin-right: 20px;
-        }
-        .dots {
-            display: flex;
-            gap: 15px;
-        }
-        .dot {
+            font-size: 36px;
+            font-weight: 900;
             width: 45px;
-            height: 45px;
-            border-radius: 50%;
-            background-color: var(--off-color);
-            border: 2px solid #555;
-            transition: background-color 0.1s;
+            margin-right: 15px;
+            text-align: center;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.9);
         }
-        /* 点灯色 */
-        .ball.active { background-color: var(--ball-color); box-shadow: 0 0 15px var(--ball-color); }
-        .strike.active { background-color: var(--strike-color); box-shadow: 0 0 15px var(--strike-color); }
-        .out.active { background-color: var(--out-color); box-shadow: 0 0 15px var(--out-color); }
+
+        .circle {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            margin: 0 6px;
+            background: radial-gradient(circle, #20252e 60%, #0f1115 100%);
+            border: 2px solid #3a4454;
+            box-shadow: inset 0 4px 6px rgba(0,0,0,0.6);
+            transition: all 0.15s ease;
+        }
+
+        .ball.on { 
+            background: radial-gradient(circle, #2ecc71 40%, #27ae60 100%); 
+            box-shadow: 0 0 25px #2ecc71, inset 0 0 8px #fff; 
+            border-color: #58d68d;
+        }
+        .strike.on { 
+            background: radial-gradient(circle, #f1c40f 40%, #f39c12 100%); 
+            box-shadow: 0 0 25px #f1c40f, inset 0 0 8px #fff; 
+            border-color: #f5b041;
+        }
+        .out.on { 
+            background: radial-gradient(circle, #e74c3c 40%, #c0392b 100%); 
+            box-shadow: 0 0 25px #e74c3c, inset 0 0 8px #fff; 
+            border-color: #f1948a;
+        }
 
         .controls {
+            margin-top: 25px;
+            width: 350px;
+            padding: 0 20px;
+            box-sizing: border-box;
+        }
+
+        .action-grid {
             display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-            width: 100%;
-            margin-top: 20px;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
         }
+
         button {
-            padding: 15px;
-            font-size: 1.2rem;
+            padding: 16px;
+            font-size: 16px;
             font-weight: bold;
-            border: none;
-            border-radius: 10px;
-            background: #444;
-            color: white;
+            border: 1px solid #2c3545;
+            border-radius: 8px;
             cursor: pointer;
-            active: transform: scale(0.95);
+            background: linear-gradient(to bottom, #252d3a, #1a2029);
+            color: #e4e9f0;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.4);
+            transition: background 0.1s, transform 0.05s;
         }
-        .btn-reset { grid-column: span 2; background: #666; margin-top: 10px; }
+
+        button:active { 
+            transform: translateY(2px);
+            box-shadow: 0 2px 3px rgba(0,0,0,0.4);
+        }
+
+        .btn-connect { 
+            background: linear-gradient(to bottom, #d4af37, #aa841b); 
+            color: #0b0c10;
+            border: none;
+            width: 100%;
+            font-size: 17px;
+            margin-bottom: 25px;
+        }
+
+        .btn-reset { 
+            background: linear-gradient(to bottom, #4f5d73, #3a4454); 
+            border: none;
+            grid-column: span 2; 
+            padding: 12px;
+            font-size: 14px;
+            color: #cbd5e1;
+        }
+
+        #status-bar {
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            padding: 12px 0;
+            text-align: center;
+            background-color: #12151c;
+            font-size: 13px;
+            font-weight: bold;
+            color: #e74c3c;
+            border-top: 1px solid #1f242d;
+            letter-spacing: 1px;
+            white-space: pre-wrap;
+        }
+        #status-bar.connected { color: #2ecc71; }
     </style>
 </head>
 <body>
 
-    <div class="container">
-        <!-- Ball Row -->
-        <div class="row">
-            <div class="label" style="color: var(--ball-color);">B</div>
-            <div class="dots" id="ball-dots">
-                <div class="dot ball"></div>
-                <div class="dot ball"></div>
-                <div class="dot ball"></div>
-            </div>
-        </div>
-        <!-- Strike Row -->
-        <div class="row">
-            <div class="label" style="color: var(--strike-color);">S</div>
-            <div class="dots" id="strike-dots">
-                <div class="dot strike"></div>
-                <div class="dot strike"></div>
-            </div>
-        </div>
-        <!-- Out Row -->
-        <div class="row">
-            <div class="label" style="color: var(--out-color);">O</div>
-            <div class="dots" id="out-dots">
-                <div class="dot out"></div>
-                <div class="dot out"></div>
-            </div>
-        </div>
+    <div class="header-container">
+        <h1>HIGASHIOSAKA B.B.C.</h1>
+        <div class="sub-title">OFFICIAL BSO CONTROLLER</div>
+    </div>
 
-        <div class="controls">
-            <button onclick="addCount('ball')">BALL</button>
-            <button onclick="addCount('strike')">STRIKE</button>
-            <button onclick="addCount('out')">OUT</button>
-            <button onclick="clearInning()">CLEAR</button>
-            <button class="btn-reset" onclick="resetAll()">ALL RESET</button>
+    <div class="scoreboard">
+        <div class="row">
+            <div class="label" style="color: #2ecc71;">B</div>
+            <div id="b1" class="circle ball"></div>
+            <div id="b2" class="circle ball"></div>
+            <div id="b3" class="circle ball"></div>
+        </div>
+        <div class="row">
+            <div class="label" style="color: #f1c40f;">S</div>
+            <div id="s1" class="circle strike"></div>
+            <div id="s2" class="circle strike"></div>
+        </div>
+        <div class="row">
+            <div class="label" style="color: #e74c3c;">O</div>
+            <div id="o1" class="circle out"></div>
+            <div id="o2" class="circle out"></div>
         </div>
     </div>
 
+    <div class="controls">
+        <button class="btn-connect" onclick="connect()">東大阪BBC カウンターに接続</button>
+        
+        <div class="action-grid">
+            <button onclick="send('B')">BALL</button>
+            <button onclick="send('S')">STRIKE</button>
+            <button onclick="send('O')">OUT</button>
+            <button class="btn-reset" onclick="send('R')">RESET BOARD</button>
+        </div>
+    </div>
+
+    <div id="status-bar">STATUS: DISCONNECTED</div>
+
     <script>
-        let counts = { ball: 0, strike: 0, out: 0 };
+        let chara = null;
+        let device = null;
+        
+        // HM-10が標準で発信するサービスUUID
+        const SERVICE_UUID = "0000ffe0-0000-1000-8000-00805f9b34fb";
+        const CHAR_UUID = "0000ffe1-0000-1000-8000-00805f9b34fb";
 
-        function updateDisplay() {
-            updateRow('ball', 3);
-            updateRow('strike', 2);
-            updateRow('out', 2);
-        }
+        async function connect() {
+            if (!navigator.bluetooth) {
+                updateStatus("エラー: お使いのブラウザや環境はBluetoothに対応していません。\n(※iPhone/iPadはSafari不可。Bluefyアプリ等が必要です/必ずHTTPSで開いてください)", false);
+                return;
+            }
 
-        function updateRow(type, max) {
-            const dots = document.getElementById(`${type}-dots`).children;
-            for (let i = 0; i < dots.length; i++) {
-                if (i < counts[type]) {
-                    dots[i].classList.add('active');
-                } else {
-                    dots[i].classList.remove('active');
-                }
+            try {
+                updateStatus("デバイス選択画面を開いています...", false);
+                
+                // 【修正】周辺のワイヤレスイヤホンや他機器を非表示にし、HM-10のみをリストアップする
+                device = await navigator.bluetooth.requestDevice({
+                    filters: [{ services: [SERVICE_UUID] }]
+                });
+                
+                updateStatus("接続中...", false);
+                const server = await device.gatt.connect();
+                const service = await server.getPrimaryService(SERVICE_UUID);
+                chara = await service.getCharacteristic(CHAR_UUID);
+                
+                await chara.startNotifications();
+                chara.addEventListener('characteristicvaluechanged', handleData);
+                device.addEventListener('gattserverdisconnected', onDisconnected);
+                
+                updateStatus("CONNECTED: " + device.name, true);
+
+                setTimeout(async () => { await send('?'); }, 500);
+            } catch (error) {
+                console.error(error);
+                updateStatus("エラー: " + error.message, false);
             }
         }
 
-        function addCount(type) {
-            counts[type]++;
-            
-            // 野球のルール判定
-            if (type === 'ball' && counts.ball === 4) {
-                clearInning();
-            } else if (type === 'strike' && counts.strike === 3) {
-                counts.out++;
-                clearInning();
-            } else if (type === 'out' && counts.out === 3) {
-                resetAll();
+        function handleData(event) {
+            const decoder = new TextDecoder('utf-8');
+            const msg = decoder.decode(event.target.value).trim();
+            updateDisplay(msg);
+        }
+
+        function updateDisplay(msg) {
+            const bMatch = msg.match(/B(\d)/);
+            const sMatch = msg.match(/S(\d)/);
+            const oMatch = msg.match(/O(\d)/);
+
+            const b = bMatch ? parseInt(bMatch[1]) : 0;
+            const s = sMatch ? parseInt(sMatch[1]) : 0;
+            const o = oMatch ? parseInt(oMatch[1]) : 0;
+
+            for(let i=1; i<=3; i++) {
+                const el = document.getElementById(`b${i}`);
+                if(el) el.classList.toggle('on', i <= b);
             }
-            updateDisplay();
+            for(let i=1; i<=2; i++) {
+                const el = document.getElementById(`s${i}`);
+                if(el) el.classList.toggle('on', i <= s);
+            }
+            for(let i=1; i<=2; i++) {
+                const el = document.getElementById(`o${i}`);
+                if(el) el.classList.toggle('on', i <= o);
+            }
         }
 
-        function clearInning() {
-            counts.ball = 0;
-            counts.strike = 0;
-            updateDisplay();
+        async function send(msg) {
+            if (!chara) return alert("先にBluetooth接続を完了させてください");
+            try { 
+                await chara.writeValue(new TextEncoder().encode(msg)); 
+            } catch (e) { 
+                updateStatus("送信エラー: " + e.message, false);
+            }
         }
 
-        function resetAll() {
-            counts = { ball: 0, strike: 0, out: 0 };
-            updateDisplay();
+        function updateStatus(text, isConnected) {
+            const bar = document.getElementById('status-bar');
+            bar.innerText = text;
+            bar.className = isConnected ? "connected" : "";
+        }
+
+        function onDisconnected() {
+            updateStatus("STATUS: DISCONNECTED", false);
+            chara = null;
         }
     </script>
 </body>
