@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>東大阪ベースボールクラブ - BSO Board</title>
+
+    <!-- 通常のブラウザタブ用アイコン（ファビコン） -->
+    <link rel="icon" type="image/png" href="bsoicon.png">
+    <!-- iPhone/iPadのホーム画面追加用アイコン -->
+    <link rel="apple-touch-icon" href="bsoicon.png">
+
+    <style>
+        body {
+            background-color: #0b0c10;
+            color: #f4f6f9;
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 0;
+            height: 100vh;
+        }
+
+        .header-container {
+            text-align: center;
+            margin-top: 25px;
+            margin-bottom: 15px;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 26px;
+            font-weight: 900;
+            letter-spacing: 1px;
+            color: #d4af37;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
+        }
+
+        .sub-title {
+            margin-top: 4px;
+            font-size: 12px;
+            font-weight: bold;
+            color: #a0aab2;
+            letter-spacing: 3px;
+        }
+
+        .scoreboard {
+            background: linear-gradient(135deg, #1f242d, #12151c);
+            padding: 25px 20px;
+            border-radius: 12px;
+            border: 3px solid #d4af37;
+            box-shadow: 0 15px 30px rgba(0,0,0,0.7), inset 0 0 15px rgba(0,0,0,0.6);
+            width: 310px;
+        }
+
+        .row {
+            display: flex;
+            align-items: center;
+            margin-bottom: 22px;
+        }
+
+        .row:last-child { margin-bottom: 0; }
+
+        .label {
+            font-size: 36px;
+            font-weight: 900;
+            width: 45px;
+            margin-right: 15px;
+            text-align: center;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.9);
+        }
+
+        .circle {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            margin: 0 6px;
+            background: radial-gradient(circle, #20252e 60%, #0f1115 100%);
+            border: 2px solid #3a4454;
+            box-shadow: inset 0 4px 6px rgba(0,0,0,0.6);
+            transition: all 0.15s ease;
+        }
+
+        .ball.on { 
+            background: radial-gradient(circle, #2ecc71 40%, #27ae60 100%); 
+            box-shadow: 0 0 25px #2ecc71, inset 0 0 8px #fff; 
+            border-color: #58d68d;
+        }
+        .strike.on { 
+            background: radial-gradient(circle, #f1c40f 40%, #f39c12 100%); 
+            box-shadow: 0 0 25px #f1c40f, inset 0 0 8px #fff; 
+            border-color: #f5b041;
+        }
+        .out.on { 
+            background: radial-gradient(circle, #e74c3c 40%, #c0392b 100%); 
+            box-shadow: 0 0 25px #e74c3c, inset 0 0 8px #fff; 
+            border-color: #f1948a;
+        }
+
+        .controls {
+            margin-top: 25px;
+            width: 350px;
+            padding: 0 20px;
+            box-sizing: border-box;
+        }
+
+        .action-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+        }
+
+        button {
+            padding: 16px;
+            font-size: 16px;
+            font-weight: bold;
+            border: 1px solid #2c3545;
+            border-radius: 8px;
+            cursor: pointer;
+            background: linear-gradient(to bottom, #252d3a, #1a2029);
+            color: #e4e9f0;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.4);
+            transition: background 0.1s, transform 0.05s;
+        }
+
+        button:active { 
+            transform: translateY(2px);
+            box-shadow: 0 2px 3px rgba(0,0,0,0.4);
+        }
+
+        .btn-clear-bs, .btn-reset { 
+            grid-column: span 2; 
+            padding: 12px;
+            font-size: 14px;
+            border: none;
+        }
+
+        .btn-clear-bs {
+            background: linear-gradient(to bottom, #4a5568, #2d3748);
+            color: #e2e8f0;
+        }
+
+        .btn-reset { 
+            background: linear-gradient(to bottom, #4f5d73, #3a4454); 
+            color: #cbd5e1;
+        }
+
+        #status-bar {
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            padding: 12px 0;
+            background-color: #12151c;
+            font-size: 13px;
+            font-weight: bold;
+            color: #e74c3c;
+            border-top: 1px solid #1f242d;
+            letter-spacing: 1px;
+            white-space: pre-wrap;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        #status-bar.connected { color: #2ecc71; }
+
+        .btn-connect-mini {
+            background: linear-gradient(to bottom, #d4af37, #aa841b);
+            color: #0b0c10;
+            border: none;
+            padding: 4px 10px;
+            font-size: 11px;
+            font-weight: bold;
+            border-radius: 4px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.4);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header-container">
+        <h1>HIGASHIOSAKA B.B.C.</h1>
+        <div class="sub-title">OFFICIAL BSO CONTROLLER</div>
+    </div>
+
+    <div class="scoreboard">
+        <div class="row">
+            <div class="label" style="color: #2ecc71;">B</div>
+            <div id="b1" class="circle ball"></div>
+            <div id="b2" class="circle ball"></div>
+            <div id="b3" class="circle ball"></div>
+        </div>
+        <div class="row">
+            <div class="label" style="color: #f1c40f;">S</div>
+            <div id="s1" class="circle strike"></div>
+            <div id="s2" class="circle strike"></div>
+        </div>
+        <div class="row">
+            <div class="label" style="color: #e74c3c;">O</div>
+            <div id="o1" class="circle out"></div>
+            <div id="o2" class="circle out"></div>
+        </div>
+    </div>
+
+    <div class="controls">
+        <div class="action-grid">
+            <button onclick="handleAction('B')">BALL</button>
+            <button onclick="handleAction('S')">STRIKE</button>
+            <button onclick="handleAction('O')">OUT</button>
+            <button class="btn-clear-bs" onclick="handleAction('C')">CLEAR BALL / STRIKE</button>
+            <button class="btn-reset" onclick="handleAction('R')">RESET BOARD</button>
+        </div>
+    </div>
+
+    <div id="status-bar">
+        <button id="connect-btn" class="btn-connect-mini" onclick="connect()">接続</button>
+        <span id="status-text">STATUS: DISCONNECTED</span>
+    </div>
+
+    <script>
+        let chara = null;
+        let device = null;
+        
+        // 内部テスト用のカウント保持変数
+        let localCounts = { b: 0, s: 0, o: 0 };
+
+        const SERVICE_UUID = "0000ffe0-0000-1000-8000-00805f9b34fb";
+        const CHAR_UUID = "0000ffe1-0000-1000-8000-00805f9b34fb";
+
+        async function connect() {
+            if (!navigator.bluetooth) {
+                updateStatus("エラー: お使いのブラウザや環境はBluetoothに対応していません。\n(※iPhone/iPadはSafari不可。Bluefyアプリ等が必要です/必ずHTTPSで開いてください)", false);
+                return;
+            }
+
+            try {
+                updateStatus("デバイス選択画面を開いています...", false);
+                
+                device = await navigator.bluetooth.requestDevice({
+                    filters: [{ services: [SERVICE_UUID] }]
+                });
+                
+                updateStatus("接続中...", false);
+                const server = await device.gatt.connect();
+                const service = await server.getPrimaryService(SERVICE_UUID);
+                chara = await service.getCharacteristic(CHAR_UUID);
+                
+                await chara.startNotifications();
+                chara.addEventListener('characteristicvaluechanged', handleData);
+                device.addEventListener('gattserverdisconnected', onDisconnected);
+                
+                updateStatus("CONNECTED: " + (device.name || "BSO Board"), true);
+
+                // 接続が完了したときに、画面上のBSOカウントをすべてリセット（消灯）する
+                testResetAll();
+
+                // 接続直後に現在のカウント状態をArduinoに要求
+                setTimeout(async () => { await send('?'); }, 500);
+            } catch (error) {
+                console.error(error);
+                updateStatus("エラー: " + error.message, false);
+            }
+        }
+
+        // Arduino（HM-10）からデータを受信した時の処理
+        function handleData(event) {
+            const decoder = new TextDecoder('utf-8');
+            const msg = decoder.decode(event.target.value).trim();
+            updateDisplay(msg);
+        }
+
+        // ボタンが押されたときの統合処理（テスト動作 ＋ 接続時は送信）
+        function handleAction(action) {
+            // 1. 接続の有無にかかわらず、画面上でカウントテストを実行
+            processLocalTest(action);
+            
+            // 2. Bluetooth接続中であれば、Arduinoにもデータを送信
+            if (chara) {
+                send(action);
+            }
+        }
+
+        // 送信処理
+        async function send(text) {
+            try {
+                const encoder = new TextEncoder();
+                await chara.writeValue(encoder.encode(text));
+            } catch (error) {
+                console.error("送信エラー:", error);
+            }
+        }
+
+        // 切断時の処理
+        function onDisconnected() {
+            updateStatus("STATUS: DISCONNECTED (切断されました)", false);
+            chara = null;
+            device = null;
+        }
+
+        // ステータスバーのテキスト更新
+        function updateStatus(text, isConnected) {
+            const statusText = document.getElementById("status-text");
+            const bar = document.getElementById("status-bar");
+            statusText.innerText = text;
+            if (isConnected) {
+                bar.classList.add("connected");
+            } else {
+                bar.classList.remove("connected");
+            }
+        }
+
+        // 受信データ、またはローカルテスト値を元に画面のLED表示を更新
+        function updateDisplay(msg) {
+            const bMatch = msg.match(/B(\d)/);
+            const sMatch = msg.match(/S(\d)/);
+            const oMatch = msg.match(/O(\d)/);
+
+            const b = bMatch ? parseInt(bMatch[1]) : 0;
+            const s = sMatch ? parseInt(sMatch[1]) : 0;
+            const o = oMatch ? parseInt(oMatch[1]) : 0;
+
+            // 同期のためにローカル変数も上書き
+            localCounts = { b, s, o };
+
+            renderDots();
+        }
+
+        // 画面のLED（丸いランプ）の点灯・消灯を実際に反映する関数
+        function renderDots() {
+            // Ballランプ更新
+            document.getElementById("b1").classList.toggle("on", localCounts.b >= 1);
+            document.getElementById("b2").classList.toggle("on", localCounts.b >= 2);
+            document.getElementById("b3").classList.toggle("on", localCounts.b >= 3);
+
+            // Strikeランプ更新
+            document.getElementById("s1").classList.toggle("on", localCounts.s >= 1);
+            document.getElementById("s2").classList.toggle("on", localCounts.s >= 2);
+
+            // Outランプ更新
+            document.getElementById("o1").classList.toggle("on", localCounts.o >= 1);
+            document.getElementById("o2").classList.toggle("on", localCounts.o >= 2);
+        }
+
+        // 未接続時でも動く単体テスト用のカウント処理ルール（野球の規則に準拠）
+        function processLocalTest(action) {
+            if (action === 'B') {
+                localCounts.b++;
+                if (localCounts.b >= 4) {
+                    localCounts.b = 0;
+                    localCounts.s = 0;
+                }
+            } else if (action === 'S') {
+                localCounts.s++;
+                if (localCounts.s >= 3) {
+                    localCounts.b = 0;
+                    localCounts.s = 0;
+                    localCounts.o++;
+                    if (localCounts.o >= 3) {
+                        testResetAll();
+                        return;
+                    }
+                }
+            } else if (action === 'O') {
+                localCounts.o++;
+                if (localCounts.o >= 3) {
+                    testResetAll();
+                    return;
+                }
+            } else if (action === 'C') {
+                localCounts.b = 0;
+                localCounts.s = 0;
+            } else if (action === 'R') {
+                testResetAll();
+                return;
+            }
+            renderDots();
+        }
+
+        // 全リセット用関数
+        function testResetAll() {
+            localCounts = { b: 0, s: 0, o: 0 };
+            renderDots();
+        }
+    </script>
+</body>
+</html>
