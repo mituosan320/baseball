@@ -180,7 +180,7 @@
 <body>
 
     <div class="header-container">
-        <h1>東大阪BBCヤング</h1>
+        <h1>HIGASHIOSAKA B.B.C.</h1>
         <div class="sub-title">OFFICIAL BSO CONTROLLER</div>
     </div>
 
@@ -276,7 +276,7 @@
                 // 画面テスト側をクリア
                 processLocalTest('C');
                 
-                // 【最重要】Arduino側に 'C' が無いため、'R'（全リセット）を送り、
+                // Arduino側に 'C' が無いため、'R'（全リセット）を送り、
                 // その後現在保持しているOUTの数（1〜2個）だけ 'O' を連続で送り直して擬似クリアを作る
                 if (chara) {
                     const currentOut = localCounts.o; 
@@ -332,7 +332,6 @@
             const sMatch = msg.match(/S(\d)/);
             const oMatch = msg.match(/O(\d)/);
 
-            // 【完全バグ修正】 配列の1番目 [1]（正規表現で抽出した純粋な数字部分）を正しく数値化する
             const b = bMatch ? parseInt(bMatch[1]) : 0;
             const s = sMatch ? parseInt(sMatch[1]) : 0;
             const o = oMatch ? parseInt(oMatch[1]) : 0;
@@ -359,30 +358,24 @@
             document.getElementById("o2").classList.toggle("on", localCounts.o >= 2);
         }
 
-        // 未接続時でも動く単体テスト用のカウント処理ルール（野球の規則に準拠）
+        // 未接続時でも動く単体テスト用のカウント処理ルール（Arduinoのスケッチ処理と完全一致）
         function processLocalTest(action) {
             if (action === 'B') {
                 localCounts.b++;
                 if (localCounts.b >= 4) {
                     localCounts.b = 0;
-                    localCounts.s = 0;
                 }
             } else if (action === 'S') {
                 localCounts.s++;
                 if (localCounts.s >= 3) {
-                    localCounts.b = 0;
                     localCounts.s = 0;
-                    localCounts.o++;
-                    if (localCounts.o >= 3) {
-                        testResetAll();
-                        return;
-                    }
                 }
             } else if (action === 'O') {
                 localCounts.o++;
                 if (localCounts.o >= 3) {
-                    testResetAll();
-                    return;
+                    localCounts.b = 0;
+                    localCounts.s = 0;
+                    localCounts.o = 0;
                 }
             } else if (action === 'C') {
                 localCounts.b = 0;
