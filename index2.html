@@ -310,12 +310,13 @@
             }
         }
 
-        // 受信データ、またはローカルテスト値を元に画面のLED表示を更新
+        // 受信データ（例: "B1S2O0"）を元に画面のLED表示を更新
         function updateDisplay(msg) {
             const bMatch = msg.match(/B(\d)/);
             const sMatch = msg.match(/S(\d)/);
             const oMatch = msg.match(/O(\d)/);
 
+            // 修正：[1]を指定して、正規表現でキャプチャした数値を正しくパースする
             const b = bMatch ? parseInt(bMatch[1]) : 0;
             const s = sMatch ? parseInt(sMatch[1]) : 0;
             const o = oMatch ? parseInt(oMatch[1]) : 0;
