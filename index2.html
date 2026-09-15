@@ -272,12 +272,28 @@
 
         // ボタンが押されたときの統合処理
         async function handleAction(action) {
-            // 1. 接続の有無にかかわらず、画面上でカウントテストを実行
-            processLocalTest(action);
-            
-            // 2. Bluetooth接続中であれば、Arduinoにデータ（'B','S','O','C','R'）をそのまま送信
-            if (chara) {
-                await send(action);
+            if (action === 'C') {
+                // 画面テスト側をクリア
+                processLocalTest('C');
+                
+                // 【最重要】Arduino側に 'C' が無いため、'R'（全リセット）を送り、
+                // その後現在保持しているOUTの数（1〜2個）だけ 'O' を連続で送り直して擬似クリアを作る
+                if (chara) {
+                    const currentOut = localCounts.o; 
+                    await send('R'); // まず全リセット
+                    
+                    // 機器の処理速度を考慮して、50ミリ秒ずつズラしてOUTの信号を再送
+                    for (let i = 0; i < currentOut; i++) {
+                        await new Promise(resolve => setTimeout(resolve, 50));
+                        await send('O');
+                    }
+                }
+            } else {
+                // 通常のB・S・O・Rはそのまま画面に反映し、接続時は機器に送信
+                processLocalTest(action);
+                if (chara) {
+                    await send(action);
+                }
             }
         }
 
@@ -316,7 +332,7 @@
             const sMatch = msg.match(/S(\d)/);
             const oMatch = msg.match(/O(\d)/);
 
-            // 【完全修正】[1]を指定し、正規表現で抽出した文字（数字部分）を確実にパースする
+            // 【完全バグ修正】 配列の1番目 [1]（正規表現で抽出した純粋な数字部分）を正しく数値化する
             const b = bMatch ? parseInt(bMatch[1]) : 0;
             const s = sMatch ? parseInt(sMatch[1]) : 0;
             const o = oMatch ? parseInt(oMatch[1]) : 0;
