@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>東大阪ベースボールクラブ - BSO Board</title>
+    <title>東大阪ベースボールヤング - BSO Board</title>
 
     <!-- 通常のブラウザタブ用アイコン（ファビコン） -->
     <link rel="icon" type="image/png" href="bsoicon.png">
@@ -129,21 +129,20 @@
             box-shadow: 0 2px 3px rgba(0,0,0,0.4);
         }
 
-        .btn-connect { 
-            background: linear-gradient(to bottom, #d4af37, #aa841b); 
-            color: #0b0c10;
+        .btn-clear-bs, .btn-reset { 
+            grid-column: span 2; 
+            padding: 12px;
+            font-size: 14px;
             border: none;
-            width: 100%;
-            font-size: 17px;
-            margin-bottom: 25px;
+        }
+
+        .btn-clear-bs {
+            background: linear-gradient(to bottom, #4a5568, #2d3748);
+            color: #e2e8f0;
         }
 
         .btn-reset { 
             background: linear-gradient(to bottom, #4f5d73, #3a4454); 
-            border: none;
-            grid-column: span 2; 
-            padding: 12px;
-            font-size: 14px;
             color: #cbd5e1;
         }
 
@@ -152,7 +151,6 @@
             bottom: 0;
             width: 100%;
             padding: 12px 0;
-            text-align: center;
             background-color: #12151c;
             font-size: 13px;
             font-weight: bold;
@@ -160,14 +158,29 @@
             border-top: 1px solid #1f242d;
             letter-spacing: 1px;
             white-space: pre-wrap;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
         }
         #status-bar.connected { color: #2ecc71; }
+
+        .btn-connect-mini {
+            background: linear-gradient(to bottom, #d4af37, #aa841b);
+            color: #0b0c10;
+            border: none;
+            padding: 4px 10px;
+            font-size: 11px;
+            font-weight: bold;
+            border-radius: 4px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.4);
+        }
     </style>
 </head>
 <body>
 
     <div class="header-container">
-        <h1>HIGASHIOSAKA B.B.C.</h1>
+        <h1>東大阪BBCヤング</h1>
         <div class="sub-title">OFFICIAL BSO CONTROLLER</div>
     </div>
 
@@ -191,22 +204,27 @@
     </div>
 
     <div class="controls">
-        <button class="btn-connect" onclick="connect()">東大阪BBC カウンターに接続</button>
-        
         <div class="action-grid">
-            <button onclick="send('B')">BALL</button>
-            <button onclick="send('S')">STRIKE</button>
-            <button onclick="send('O')">OUT</button>
-            <button class="btn-reset" onclick="send('R')">RESET BOARD</button>
+            <button onclick="handleAction('B')">BALL</button>
+            <button onclick="handleAction('S')">STRIKE</button>
+            <button onclick="handleAction('O')">OUT</button>
+            <button class="btn-clear-bs" onclick="handleAction('C')">CLEAR BALL / STRIKE</button>
+            <button class="btn-reset" onclick="handleAction('R')">RESET BOARD</button>
         </div>
     </div>
 
-    <div id="status-bar">STATUS: DISCONNECTED</div>
+    <div id="status-bar">
+        <button id="connect-btn" class="btn-connect-mini" onclick="connect()">接続</button>
+        <span id="status-text">STATUS: DISCONNECTED</span>
+    </div>
 
     <script>
         let chara = null;
         let device = null;
         
+        // 内部テスト用のカウント保持変数
+        let localCounts = { b: 0, s: 0, o: 0 };
+
         const SERVICE_UUID = "0000ffe0-0000-1000-8000-00805f9b34fb";
         const CHAR_UUID = "0000ffe1-0000-1000-8000-00805f9b34fb";
 
@@ -234,6 +252,9 @@
                 
                 updateStatus("CONNECTED: " + (device.name || "BSO Board"), true);
 
+                // 接続が完了したときに、画面上のBSOカウントをすべてリセット（消灯）する
+                testResetAll();
+
                 // 接続直後に現在のカウント状態をArduinoに要求
                 setTimeout(async () => { await send('?'); }, 500);
             } catch (error) {
@@ -249,12 +270,35 @@
             updateDisplay(msg);
         }
 
-        // 送信処理（Webアプリのボタンを押した時）
-        async function send(text) {
-            if (!chara) {
-                alert("デバイスに接続されていません。先に接続してください。");
-                return;
+        // ボタンが押されたときの統合処理
+        async function handleAction(action) {
+            if (action === 'C') {
+                // 画面テスト側をクリア
+                processLocalTest('C');
+                
+                // 【最重要】Arduino側に 'C' が無いため、'R'（全リセット）を送り、
+                // その後現在保持しているOUTの数（1〜2個）だけ 'O' を連続で送り直して擬似クリアを作る
+                if (chara) {
+                    const currentOut = localCounts.o; 
+                    await send('R'); // まず全リセット
+                    
+                    // 機器の処理速度を考慮して、50ミリ秒ずつズラしてOUTの信号を再送
+                    for (let i = 0; i < currentOut; i++) {
+                        await new Promise(resolve => setTimeout(resolve, 50));
+                        await send('O');
+                    }
+                }
+            } else {
+                // 通常のB・S・O・Rはそのまま画面に反映し、接続時は機器に送信
+                processLocalTest(action);
+                if (chara) {
+                    await send(action);
+                }
             }
+        }
+
+        // 送信処理
+        async function send(text) {
             try {
                 const encoder = new TextEncoder();
                 await chara.writeValue(encoder.encode(text));
@@ -272,8 +316,9 @@
 
         // ステータスバーのテキスト更新
         function updateStatus(text, isConnected) {
+            const statusText = document.getElementById("status-text");
             const bar = document.getElementById("status-bar");
-            bar.innerText = text;
+            statusText.innerText = text;
             if (isConnected) {
                 bar.classList.add("connected");
             } else {
@@ -287,22 +332,72 @@
             const sMatch = msg.match(/S(\d)/);
             const oMatch = msg.match(/O(\d)/);
 
+            // 【完全バグ修正】 配列の1番目 [1]（正規表現で抽出した純粋な数字部分）を正しく数値化する
             const b = bMatch ? parseInt(bMatch[1]) : 0;
             const s = sMatch ? parseInt(sMatch[1]) : 0;
             const o = oMatch ? parseInt(oMatch[1]) : 0;
 
+            // 同期のためにローカル変数も上書き
+            localCounts = { b, s, o };
+
+            renderDots();
+        }
+
+        // 画面のLED（丸いランプ）の点灯・消灯を実際に反映する関数
+        function renderDots() {
             // Ballランプ更新
-            document.getElementById("b1").classList.toggle("on", b >= 1);
-            document.getElementById("b2").classList.toggle("on", b >= 2);
-            document.getElementById("b3").classList.toggle("on", b >= 3);
+            document.getElementById("b1").classList.toggle("on", localCounts.b >= 1);
+            document.getElementById("b2").classList.toggle("on", localCounts.b >= 2);
+            document.getElementById("b3").classList.toggle("on", localCounts.b >= 3);
 
             // Strikeランプ更新
-            document.getElementById("s1").classList.toggle("on", s >= 1);
-            document.getElementById("s2").classList.toggle("on", s >= 2);
+            document.getElementById("s1").classList.toggle("on", localCounts.s >= 1);
+            document.getElementById("s2").classList.toggle("on", localCounts.s >= 2);
 
             // Outランプ更新
-            document.getElementById("o1").classList.toggle("on", o >= 1);
-            document.getElementById("o2").classList.toggle("on", o >= 2);
+            document.getElementById("o1").classList.toggle("on", localCounts.o >= 1);
+            document.getElementById("o2").classList.toggle("on", localCounts.o >= 2);
+        }
+
+        // 未接続時でも動く単体テスト用のカウント処理ルール（野球の規則に準拠）
+        function processLocalTest(action) {
+            if (action === 'B') {
+                localCounts.b++;
+                if (localCounts.b >= 4) {
+                    localCounts.b = 0;
+                    localCounts.s = 0;
+                }
+            } else if (action === 'S') {
+                localCounts.s++;
+                if (localCounts.s >= 3) {
+                    localCounts.b = 0;
+                    localCounts.s = 0;
+                    localCounts.o++;
+                    if (localCounts.o >= 3) {
+                        testResetAll();
+                        return;
+                    }
+                }
+            } else if (action === 'O') {
+                localCounts.o++;
+                if (localCounts.o >= 3) {
+                    testResetAll();
+                    return;
+                }
+            } else if (action === 'C') {
+                localCounts.b = 0;
+                localCounts.s = 0;
+            } else if (action === 'R') {
+                testResetAll();
+                return;
+            }
+            renderDots();
+        }
+
+        // 全リセット用関数
+        function testResetAll() {
+            localCounts = { b: 0, s: 0, o: 0 };
+            renderDots();
         }
     </script>
 </body>
