@@ -270,15 +270,15 @@
             updateDisplay(msg);
         }
 
-        // ボタンが押されたときの統合処理（テスト動作 ＋ 接続時は送信）
+        // ボタンが押されたときの統合処理（確実に送信してからテスト表示を動かす）
         function handleAction(action) {
-            // 1. 接続の有無にかかわらず、画面上でカウントテストを実行
-            processLocalTest(action);
-            
-            // 2. Bluetooth接続中であれば、Arduinoにもデータを送信
+            // 1. Bluetooth接続中であれば、最優先でArduinoにデータを送信
             if (chara) {
                 send(action);
             }
+            
+            // 2. 接続の有無にかかわらず、画面上でカウントテストを実行
+            processLocalTest(action);
         }
 
         // 送信処理
@@ -316,7 +316,7 @@
             const sMatch = msg.match(/S(\d)/);
             const oMatch = msg.match(/O(\d)/);
 
-            // 修正：[1]を指定して、正規表現でキャプチャした数値を正しくパースする
+            // 修正：[1]を指定して、キャプチャした文字グループを正しくパースする
             const b = bMatch ? parseInt(bMatch[1]) : 0;
             const s = sMatch ? parseInt(sMatch[1]) : 0;
             const o = oMatch ? parseInt(oMatch[1]) : 0;
