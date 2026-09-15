@@ -271,28 +271,30 @@
         }
 
         // ボタンが押されたときの統合処理
-        async function handleAction(action) {
+        function handleAction(action) {
             if (action === 'C') {
-                // 画面テスト側をクリア
-                processLocalTest('C');
-                
-                // Arduino側に 'C' が無いため、'R'（全リセット）を送り、
-                // その後現在保持しているOUTの数（1〜2個）だけ 'O' を連続で送り直して擬似クリアを作る
                 if (chara) {
-                    const currentOut = localCounts.o; 
-                    await send('R'); // まず全リセット
+                    // 接続時は機器の同期を最優先し、マクロ処理をバックグラウンドで非同期実行する
+                    const currentOut = localCounts.o;
                     
-                    // 機器の処理速度を考慮して、50ミリ秒ずつズラしてOUTの信号を再送
-                    for (let i = 0; i < currentOut; i++) {
-                        await new Promise(resolve => setTimeout(resolve, 50));
-                        await send('O');
-                    }
+                    // awaitを外してバックグラウンドで高速処理させ、送信ラグによるチラつきを最小限に抑える
+                    send('R').then(async () => {
+                        for (let i = 0; i < currentOut; i++) {
+                            await new Promise(resolve => setTimeout(resolve, 30)); // 間隔を30msに短縮
+                            await send('O');
+                        }
+                    });
+                } else {
+                    // 未接続時は画面のテスト表示のみ更新
+                    processLocalTest('C');
                 }
             } else {
-                // 通常のB・S・O・Rはそのまま画面に反映し、接続時は機器に送信
-                processLocalTest(action);
                 if (chara) {
-                    await send(action);
+                    // 通常ボタンの接続時は、画面を先走らせずArduinoからのデータ受信（updateDisplay）に描画を任せる
+                    send(action);
+                } else {
+                    // 未接続時は画面のテスト表示のみ更新
+                    processLocalTest(action);
                 }
             }
         }
